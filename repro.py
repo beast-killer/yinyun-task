@@ -119,11 +119,11 @@ def sec_load(df: pd.DataFrame) -> None:
         g_lo = g[g["labor_hours"] < LOAD_LO]["is_fail"]
         g_hi = g[g["labor_hours"] >= LOAD_HI]["is_fail"]
         if len(g_lo) >= 5 and len(g_hi) >= 5:
-            rows.append([sc, len(g_lo), g_lo.mean() * 100, len(g_hi), g_hi.mean() * 100,
-                         (g_hi.mean() - g_lo.mean()) * 100])
-    layer = pd.DataFrame(rows, columns=["网点", "n_低", "低负荷%", "n_高", "高负荷%", "差值pp"])
+            rows.append([sc, len(g), len(g_lo), g_lo.mean() * 100, len(g_hi), g_hi.mean() * 100,
+                         len(g_hi) / len(g) * 100, (g_hi.mean() - g_lo.mean()) * 100])
+    layer = pd.DataFrame(rows, columns=["网点", "总单量", "n_低", "低负荷%", "n_高", "高负荷%", "高负荷占比%", "差值pp"])
     print(layer.round(1).to_string(index=False))
-    print(f"  5 个网点中方向一致的有 {int((layer['差值pp'] > 0).sum())}/5")
+    print(f"  5 个网点中方向一致的有 {int((layer['差值pp'] > 0).sum())}/{len(layer)}")
 
 
 # ============================================================ 3 备件
