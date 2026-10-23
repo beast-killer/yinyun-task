@@ -4,8 +4,10 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 
-# 本地工作文件，不进仓库
+# 本地工作文件，禁止提交（追问准备材料，不能公开）
 DECISIONS.md
+过程日志.md
+追问速查.md
 _smoke*.csv
 _t*.csv
 *.log
