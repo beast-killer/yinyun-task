@@ -185,6 +185,39 @@ def sec_roi(df: pd.DataFrame) -> None:
 SECTIONS = {"0": sec_data, "1": sec_manual, "2": sec_load, "3": sec_parts, "4": sec_roi}
 
 
+# ============================================================ 5 敏感性
+def sec_sensitivity(df: pd.DataFrame) -> None:
+    """结论离临界点有多近。这一节是给「如果假设变了呢」这类追问准备的。"""
+    print("=" * 72)
+    print("[5] 敏感性: 主结论有多脆弱")
+    v = valid(df)
+
+    hi = v[v["labor_hours"] >= LOAD_HI]
+    p_hi = hi["is_fail"].mean()
+    crit = p_hi * FAIL_COST_H
+    print(f"  >={LOAD_HI}h 失败率 {p_hi*100:.2f}%  ->  每单期望挽回 {crit:.2f}h")
+    print(f"  临界拦截成本 = {crit:.2f}h; 题干给 {INTERCEPT_COST_H:.0f}h")
+    print(f"  >>> 只差 {abs(INTERCEPT_COST_H - crit):.2f}h 就翻转 —— 这个结论是贴着临界线的, 不是压倒性的")
+
+    n_miss = int(df["is_resolved"].isna().sum())
+    worst = (v["is_fail"].sum() + n_miss) / (len(v) + n_miss)
+    breakeven = INTERCEPT_COST_H / FAIL_COST_H * 100
+    print(f"\n  最坏情况: 未回传的 {n_miss} 单全部算失败")
+    print(f"    整体失败率 {worst*100:.2f}%, 仍低于盈亏线 {breakeven:.0f}%? {worst*100 < breakeven}")
+
+    print("\n  阈值敏感(换一个高负荷边界, 结论会不会变):")
+    for t in (50, 55, 60, 65, 70):
+        h = v[v["labor_hours"] >= t]
+        if len(h) < 20:
+            continue
+        r = h["is_fail"].mean()
+        print(f"    >={t}h  n={len(h):>3}  失败率 {r*100:5.1f}%  临界成本 {r*FAIL_COST_H:5.2f}h  "
+              f"{'亏' if r*FAIL_COST_H < INTERCEPT_COST_H else '赚'}")
+
+
+SECTIONS["5"] = sec_sensitivity
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="复现 README 全部数字")
     ap.add_argument("--section", choices=sorted(SECTIONS))
