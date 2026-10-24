@@ -125,6 +125,26 @@ def sec_load(df: pd.DataFrame) -> None:
     print(layer.round(1).to_string(index=False))
     print(f"  5 个网点中方向一致的有 {int((layer['差值pp'] > 0).sum())}/{len(layer)}")
 
+    # 第二层: 按故障类别分层。为的是挡住"其实是故障复杂度导致的"这个质疑 ——
+    # 如果同一类别内部积压效应依然存在, 说明积压不是复杂度的代理变量。
+    print("\n  第二层分层(各故障类别内部, 高负荷 vs 低负荷失败率):")
+    rows2 = []
+    for cat, g in v.groupby("fault_category"):
+        g_lo = g[g["labor_hours"] < LOAD_LO]["is_fail"]
+        g_hi = g[g["labor_hours"] >= LOAD_HI]["is_fail"]
+        if len(g_lo) >= 5 and len(g_hi) >= 5:
+            rows2.append([cat, len(g_lo), g_lo.mean() * 100, len(g_hi), g_hi.mean() * 100,
+                          (g_hi.mean() - g_lo.mean()) * 100])
+    layer2 = pd.DataFrame(rows2, columns=["故障类别", "n_低", "低负荷%", "n_高", "高负荷%", "差值pp"])
+    print(layer2.round(1).to_string(index=False))
+    ok2 = int((layer2["差值pp"] > 0).sum())
+    print(f"  {len(layer2)} 个类别中方向一致 {ok2}/{len(layer2)}")
+    if ok2 < len(layer2):
+        bad = layer2[layer2["差值pp"] <= 0]
+        for _, r in bad.iterrows():
+            print(f"  例外: {r['故障类别']} ({r['低负荷%']:.1f}% -> {r['高负荷%']:.1f}%)，"
+                  f"方向相反({r['差值pp']:+.1f}pp)，如实列出，不强行解释")
+
 
 # ============================================================ 3 备件
 def sec_parts(df: pd.DataFrame) -> None:
